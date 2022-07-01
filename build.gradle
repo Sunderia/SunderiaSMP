@@ -2,26 +2,42 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'kr.entree.spigradle' version '2.3.4'
-    id("io.typecraft.gradlesource.spigot") version "1.0.0"
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
+apply from: rootProject.file('specialSource.gradle')
 apply from: rootProject.file('buildtools.gradle')
 
-group 'fr.minemobs'
+group 'fr.sunderia'
 version '1.0-SNAPSHOT'
-String mcVersion = '1.18.2'
+String mcVersion = '1.18.1'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+compileJava {
+    options.encoding = "UTF-8"
+}
 
 repositories {
     mavenCentral()
     mavenLocal()
+    protocolLib()
+    maven {
+        name 'SunderiaRepo'
+        url 'https://maven.galaxyfight.fr/snapshots'
+    }
+    maven {
+        name = "Jeff"
+        url = 'https://hub.jeff-media.com/nexus/repository/jeff-media-public/'
+    }
 }
 
 dependencies {
+    compileOnly spigot(mcVersion)
     compileOnly "org.spigotmc:spigot:$mcVersion-R0.1-SNAPSHOT:remapped-mojang"
-    compileOnly(spigot(mcVersion))
+    compileOnly protocolLib("4.8.0")
+    shadow 'fr.sunderia:SunderiaUtils:1.5.3-SNAPSHOT'
+    shadow 'com.jeff_media:CustomBlockData:1.0.5'
 }
 
 setMCVersion {
@@ -30,11 +46,20 @@ setMCVersion {
 
 shadowJar {
     configurations = [project.configurations.runtimeClasspath, project.configurations.shadow]
+    relocate 'com.jeff_media.customblockdata.CustomBlockData', 'fr.sunderia.customblockdata.CustomBlockData'
 }
 
-spigotRemap {
-    spigotVersion.set(mcVersion)
-    sourceJarTask.set(tasks.shadowJar)
+afterEvaluate {
+    shadowJar {
+        doLast {
+            def outputFiles = outputs.files.files
+            for (inputFile in outputFiles) {
+                File intermediateFile = new File(temporaryDir, inputFile.name.replace('.jar', '-obf.jar'))
+                File outputFile = inputFile
+                remapMojangToSpigot(inputFile, intermediateFile, outputFile, "$mcVersion-R0.1-SNAPSHOT")
+            }
+        }
+    }
 }
 
 tasks.prepareSpigotPlugins.dependsOn shadowJar
@@ -49,6 +74,7 @@ spigot {
     }
     authors group.toString().split('\\.')[1]
     apiVersion mcVersion.split("\\.")[0..1].join('.')
+    depends('ProtocolLib')
 }
 
 
