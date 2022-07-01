@@ -13,7 +13,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.structure.Structure;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Objects;
 
 @CommandInfo(name = "spawnstructure", aliases = "ss")
@@ -31,8 +30,6 @@ public class SpawnStructureCommand extends PluginCommand {
 
     @Override
     public void onCommand(Player player, String[] args) {
-        new ArrayList<>(6);
-        player.sendMessage("Spawning structure");
         try {
             Structure structure = Bukkit.getStructureManager().loadStructure(Objects.requireNonNull(this.getClass().getResourceAsStream("/water_trap.nbt")));
             Location loc = player.getLocation();
